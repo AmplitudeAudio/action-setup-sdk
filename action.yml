@@ -20,6 +20,10 @@ inputs:
     description: 'The directory where to install the SDK'
     required: false
     default: './amplitude_audio'
+  config:
+    description: 'The build configuration to download. Either debug or release.'
+    required: true
+    default: 'debug'
 
 outputs:
   path:

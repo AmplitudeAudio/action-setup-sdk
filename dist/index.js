@@ -28298,6 +28298,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.download = download;
 const core = __importStar(__nccwpck_require__(7484));
 const tc = __importStar(__nccwpck_require__(3472));
+const path = __importStar(__nccwpck_require__(6928));
 async function download(platforms, version) {
     if (version === 'nightly') {
         return downloadNightly(platforms);
@@ -28320,8 +28321,9 @@ async function downloadNightly(platforms) {
     let { artifacts } = (await response.json());
     artifacts = artifacts.filter(artifact => artifact.workflow_run.head_branch === 'develop' &&
         artifact.expired === false);
+    const buildConfig = core.getInput('config');
     for (const platform of platforms) {
-        const artifact = artifacts.find(artifact => artifact.name.includes(platform));
+        const artifact = artifacts.find(artifact => artifact.name.includes(platform) && artifact.name.includes(buildConfig));
         if (artifact === undefined) {
             throw new Error(`No ${platform} nightly build found`);
         }
@@ -28331,7 +28333,7 @@ async function downloadNightly(platforms) {
         const extractedFolder = await tc.extractZip(downloadedPath, installDir);
         core.addPath(extractedFolder);
         core.info(`Downloaded ${platform} nightly build to ${extractedFolder}`);
-        core.setOutput('path', extractedFolder);
+        core.setOutput('path', path.normalize(extractedFolder));
     }
 }
 

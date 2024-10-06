@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as tc from '@actions/tool-cache'
+import * as path from 'path'
 
 export async function download(
   platforms: Platform[],
@@ -41,9 +42,12 @@ async function downloadNightly(platforms: Platform[]): Promise<void> {
       artifact.expired === false
   )
 
+  const buildConfig = core.getInput('config')
+
   for (const platform of platforms) {
-    const artifact = artifacts.find(artifact =>
-      artifact.name.includes(platform)
+    const artifact = artifacts.find(
+      artifact =>
+        artifact.name.includes(platform) && artifact.name.includes(buildConfig)
     )
 
     if (artifact === undefined) {
@@ -63,6 +67,6 @@ async function downloadNightly(platforms: Platform[]): Promise<void> {
     core.addPath(extractedFolder)
     core.info(`Downloaded ${platform} nightly build to ${extractedFolder}`)
 
-    core.setOutput('path', extractedFolder)
+    core.setOutput('path', path.normalize(extractedFolder))
   }
 }
