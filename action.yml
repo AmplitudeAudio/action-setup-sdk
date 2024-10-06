@@ -13,9 +13,13 @@ inputs:
     description: 'The list of SDK platforms to install'
     required: true
   version:
-    description: 'The version of the SDK'
+    description: 'The version of the SDK to install'
     required: true
     default: 'nightly'
+  install-dir:
+    description: 'The directory where to install the SDK'
+    required: false
+    default: './amplitude_audio'
 
 outputs:
   path:

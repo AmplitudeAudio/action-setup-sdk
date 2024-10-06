@@ -28325,9 +28325,10 @@ async function downloadNightly(platforms) {
         if (artifact === undefined) {
             throw new Error(`No ${platform} nightly build found`);
         }
+        const installDir = core.getInput('install-dir');
         const downloadUrl = artifact.archive_download_url;
         const downloadedPath = await tc.downloadTool(downloadUrl, undefined, headers.Authorization);
-        const extractedFolder = await tc.extractZip(downloadedPath, './sdk');
+        const extractedFolder = await tc.extractZip(downloadedPath, installDir);
         core.addPath(extractedFolder);
         core.info(`Downloaded ${platform} nightly build to ${extractedFolder}`);
         core.setOutput('path', extractedFolder);
