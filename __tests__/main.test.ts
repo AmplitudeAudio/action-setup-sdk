@@ -22,7 +22,7 @@ let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 
 let downloadToolMock: jest.SpiedFunction<typeof tc.downloadTool>
-let extract7z: jest.SpiedFunction<typeof tc.extract7z>
+let extractZipMock: jest.SpiedFunction<typeof tc.extractZip>
 
 describe('action', () => {
   beforeEach(() => {
@@ -38,10 +38,10 @@ describe('action', () => {
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
 
     downloadToolMock = jest.spyOn(tc, 'downloadTool').mockImplementation()
-    extract7z = jest.spyOn(tc, 'extract7z').mockImplementation()
+    extractZipMock = jest.spyOn(tc, 'extractZip').mockImplementation()
 
-    downloadToolMock.mockImplementation(async () => 'path/to/sdk.7z')
-    extract7z.mockImplementation(async () => 'path/to/sdk')
+    downloadToolMock.mockImplementation(async () => 'path/to/sdk.zip')
+    extractZipMock.mockImplementation(async () => 'path/to/sdk')
   })
 
   it('downloads the nightly artifacts', async () => {
@@ -74,7 +74,7 @@ describe('action', () => {
     )
     expect(setOutputMock).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining('_nightly'),
+      'path',
       expect.stringContaining('sdk')
     )
     expect(errorMock).not.toHaveBeenCalled()

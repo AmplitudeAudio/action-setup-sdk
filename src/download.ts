@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as tc from '@actions/tool-cache'
-import { snake } from 'radash'
 
 export async function download(
   platforms: Platform[],
@@ -17,8 +16,16 @@ async function downloadNightly(platforms: Platform[]): Promise<void> {
   const artifactsUrl =
     'https://api.github.com/repos/AmplitudeAudio/sdk/actions/artifacts'
 
+  let headers: Record<string, string> = {}
+
+  if (process.env.GITHUB_TOKEN !== undefined) {
+    headers = {
+      Authorization: `token ${process.env.GITHUB_TOKEN}`
+    }
+  }
+
   core.debug('Retrieving artifacts from GitHub Actions')
-  const response = await fetch(artifactsUrl)
+  const response = await fetch(artifactsUrl, { headers })
   if (!response.ok) {
     throw new Error(`Failed to fetch artifacts: ${response.status}`)
   }
@@ -44,12 +51,16 @@ async function downloadNightly(platforms: Platform[]): Promise<void> {
     }
 
     const downloadUrl = artifact.archive_download_url
-    const downloadedPath = await tc.downloadTool(downloadUrl)
-    const extractedFolder = await tc.extract7z(downloadedPath)
+    const downloadedPath = await tc.downloadTool(
+      downloadUrl,
+      undefined,
+      headers.Authorization
+    )
+    const extractedFolder = await tc.extractZip(downloadedPath, './sdk')
 
     core.addPath(extractedFolder)
     core.info(`Downloaded ${platform} nightly build to ${extractedFolder}`)
 
-    core.setOutput(`${snake(platform)}_nightly`, extractedFolder)
+    core.setOutput('path', extractedFolder)
   }
 }

@@ -17,6 +17,10 @@ inputs:
     required: true
     default: 'nightly'
 
+outputs:
+  path:
+    description: 'The path where the SDK has been installed'
+
 runs:
   using: node20
   main: dist/index.js
