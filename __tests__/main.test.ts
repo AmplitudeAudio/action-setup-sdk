@@ -7,20 +7,22 @@
  */
 
 import * as core from '@actions/core'
+import * as tc from '@actions/tool-cache'
 import * as main from '../src/main'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
 
-// Other utilities
-const timeRegex = /^\d{2}:\d{2}:\d{2}/
-
 // Mock the GitHub Actions core library
 let debugMock: jest.SpiedFunction<typeof core.debug>
 let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
+let getMultilineInputMock: jest.SpiedFunction<typeof core.getMultilineInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
+
+let downloadToolMock: jest.SpiedFunction<typeof tc.downloadTool>
+let extract7z: jest.SpiedFunction<typeof tc.extract7z>
 
 describe('action', () => {
   beforeEach(() => {
@@ -29,18 +31,36 @@ describe('action', () => {
     debugMock = jest.spyOn(core, 'debug').mockImplementation()
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
+    getMultilineInputMock = jest
+      .spyOn(core, 'getMultilineInput')
+      .mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
+
+    downloadToolMock = jest.spyOn(tc, 'downloadTool').mockImplementation()
+    extract7z = jest.spyOn(tc, 'extract7z').mockImplementation()
+
+    downloadToolMock.mockImplementation(async () => 'path/to/sdk.7z')
+    extract7z.mockImplementation(async () => 'path/to/sdk')
   })
 
-  it('sets the time output', async () => {
+  it('downloads the nightly artifacts', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case 'milliseconds':
-          return '500'
+        case 'version':
+          return 'nightly'
         default:
           return ''
+      }
+    })
+
+    getMultilineInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'platforms':
+          return ['x64-windows', 'arm64-osx']
+        default:
+          return []
       }
     })
 
@@ -48,31 +68,35 @@ describe('action', () => {
     expect(runMock).toHaveReturned()
 
     // Verify that all of the core library functions were called correctly
-    expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
     expect(debugMock).toHaveBeenNthCalledWith(
-      2,
-      expect.stringMatching(timeRegex)
-    )
-    expect(debugMock).toHaveBeenNthCalledWith(
-      3,
-      expect.stringMatching(timeRegex)
+      1,
+      'Retrieving artifacts from GitHub Actions'
     )
     expect(setOutputMock).toHaveBeenNthCalledWith(
-      1,
-      'time',
-      expect.stringMatching(timeRegex)
+      2,
+      expect.stringContaining('_nightly'),
+      expect.stringContaining('sdk')
     )
     expect(errorMock).not.toHaveBeenCalled()
-  })
+  }, 10000)
 
-  it('sets a failed status', async () => {
+  it('sets a failed status on unknown platform', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case 'milliseconds':
-          return 'this is not a number'
+        case 'version':
+          return 'nightly'
         default:
           return ''
+      }
+    })
+
+    getMultilineInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'platforms':
+          return ['x86-windows', 'arm64-osx']
+        default:
+          return []
       }
     })
 
@@ -80,10 +104,13 @@ describe('action', () => {
     expect(runMock).toHaveReturned()
 
     // Verify that all of the core library functions were called correctly
+    expect(debugMock).toHaveBeenNthCalledWith(
+      1,
+      'Retrieving artifacts from GitHub Actions'
+    )
     expect(setFailedMock).toHaveBeenNthCalledWith(
       1,
-      'milliseconds not a number'
+      'No x86-windows nightly build found'
     )
-    expect(errorMock).not.toHaveBeenCalled()
   })
 })
