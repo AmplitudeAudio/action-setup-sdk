@@ -57,7 +57,11 @@ jobs:
         id: test-action
         uses: ./
         with:
-          milliseconds: 2000
+          platforms: |
+            x64-windows
+            x64-osx
+            x64-linux
+          version: nightly
 
       - name: Print Output
         id: output
